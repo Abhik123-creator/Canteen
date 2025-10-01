@@ -1,0 +1,60 @@
+{
+  "month": "2025-10",
+  "fund": 5000,
+  "remaining": 3749,
+  "friends": [
+    {
+      "name": "Abhik",
+      "spent": 1074
+    },
+    {
+      "name": "Parag",
+      "spent": 0
+    },
+    {
+      "name": "Rajdeep",
+      "spent": 0
+    },
+    {
+      "name": "Sohal",
+      "spent": 0
+    },
+    {
+      "name": "Soumik",
+      "spent": 177
+    }
+  ],
+  "expenses": [
+    {
+      "date": "2025-10-01",
+      "spender": "Abhik",
+      "amount": 1074,
+      "description": "Chilli, Rice 10kg, Moong Dal, salt, dhone guro, oil",
+      "items": [
+        {
+          "name": "Blinkit Groccery",
+          "qty": 1,
+          "price": 1074
+        }
+      ]
+    },
+    {
+      "date": "2025-09-30",
+      "spender": "Soumik",
+      "amount": 177,
+      "description": "By OSumik",
+      "items": [
+        {
+          "name": "Alu",
+          "qty": 1,
+          "price": 145
+        },
+        {
+          "name": "Chilli",
+          "qty": 1,
+          "price": 32
+        }
+      ]
+    }
+  ]
+}

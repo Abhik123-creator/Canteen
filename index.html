@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Grocery Ledger</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🛒 Grocery Ledger</div>
+    <div class="actions">
+      <button id="startMonth" class="btn btn-outline">Start New Month</button>
+      <button id="exportBtn" class="btn btn-primary">Export JSON</button>
+      <label class="btn btn-ghost" for="importFile">Import JSON</label>
+      <input id="importFile" type="file" accept="application/json" style="display:none" />
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="summary card">
+      <div class="summary-row">
+        <div>
+          <div class="label">Total Fund</div>
+          <div id="totalFund" class="value">₹5000</div>
+        </div>
+        <div>
+          <div class="label">Remaining</div>
+          <div id="remaining" class="value">₹5000</div>
+        </div>
+        <div>
+          <div class="label">Month</div>
+          <div id="month" class="value">—</div>
+        </div>
+      </div>
+
+      <div class="friends-list" id="friendsList">
+        <!-- friend spent cards -->
+      </div>
+    </section>
+
+    <section class="card form-card">
+      <h3>Add Expense</h3>
+      <form id="expenseForm">
+        <div class="form-row">
+          <label for="spender">Spender</label>
+          <select id="spender" required></select>
+        </div>
+        <div class="items-section">
+          <div class="items-inputs">
+            <input id="itemName" type="text" placeholder="Item name (eg. Milk)" />
+            <input id="itemQty" type="number" min="1" value="1" />
+            <input id="itemPrice" type="number" min="0.01" step="0.01" placeholder="Price" />
+            <button id="addItemBtn" class="btn btn-outline">Add Item</button>
+          </div>
+          <div id="itemsList" class="items-list"><!-- added items appear here --></div>
+          <div class="items-subtotal">Subtotal: <span id="subtotal">₹0.00</span></div>
+        </div>
+        <div class="form-row">
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" type="number" min="0" step="0.01" required />
+        </div>
+        <div class="form-row">
+          <label for="description">Description</label>
+          <input id="description" type="text" placeholder="eg. Milk & Bread" />
+        </div>
+        <div class="form-row">
+          <label for="date">Date</label>
+          <input id="date" type="date" required />
+        </div>
+        <div class="form-row form-actions">
+          <button type="submit" class="btn btn-primary">Add Expense</button>
+          <button type="reset" class="btn btn-outline">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card ledger-card">
+      <h3>Expense Ledger</h3>
+      <div class="table-wrap">
+        <table id="ledgerTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Spender</th>
+              <th>Amount (₹)</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- expenses -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">Built for 5 friends • Hosted on GitHub Pages</footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
