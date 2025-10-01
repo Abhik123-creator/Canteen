@@ -61,6 +61,8 @@ th{background:transparent;color:var(--muted);font-weight:600}
 .items-list .item-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,#fff,#fbfdff)}
 .items-subtotal{font-weight:700;text-align:right;color:var(--muted)}
 #addItemBtn{flex:0 0 auto}
+.add-fund{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.add-fund input{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);width:160px}
 @media(max-width:900px){
   .container{grid-template-columns:1fr;padding:0 12px}
   .form-card{width:100%}
@@ -76,4 +78,6 @@ th{background:transparent;color:var(--muted);font-weight:600}
   th,td{padding:10px 6px}
   table{font-size:14px}
   .items-list .item-row{font-size:14px}
+  .add-fund{flex-direction:column;align-items:stretch}
+  .add-fund input{width:100%}
 }

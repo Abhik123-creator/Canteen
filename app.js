@@ -258,5 +258,22 @@ document.getElementById('importFile').addEventListener('change', e=>{
   reader.readAsText(file)
 })
 
+// Add funds handler
+const addFundBtn = document.getElementById('addFundBtn')
+const addFundAmount = document.getElementById('addFundAmount')
+addFundBtn.addEventListener('click', async ()=>{
+  const v = parseFloat(addFundAmount.value)
+  if(!v || v<=0) return alert('Enter a valid amount')
+  state.fund = Math.round((state.fund + v)*100)/100
+  state.remaining = Math.round((state.remaining + v)*100)/100
+  try{
+    await saveState()
+    render()
+    addFundAmount.value = ''
+  }catch(err){
+    alert('Failed to add funds: '+err.message)
+  }
+})
+
 // initial render
 render()
