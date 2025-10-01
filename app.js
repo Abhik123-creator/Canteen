@@ -91,12 +91,33 @@ function render(){
 
   // ledger
   ledgerTable.innerHTML = ''
-  state.expenses.slice().reverse().forEach(exp=>{
+  state.expenses.slice().reverse().forEach((exp, revIdx)=>{
+    const idx = state.expenses.length - 1 - revIdx // original index
     const tr = document.createElement('tr')
     const itemsText = exp.items && exp.items.length ? exp.items.map(i=>`${i.name} x${i.qty} ₹${(i.price).toFixed(2)}`).join('; ') : ''
     const desc = [exp.description || '', itemsText].filter(Boolean).join(' — ')
-    tr.innerHTML = `<td>${exp.date}</td><td>${exp.spender}</td><td>₹${exp.amount}</td><td>${desc}</td>`
+    tr.innerHTML = `<td>${exp.date}</td><td>${exp.spender}</td><td>₹${exp.amount}</td><td>${desc}</td><td><button data-idx="${idx}" class="btn btn-danger delete-exp">Delete</button></td>`
     ledgerTable.appendChild(tr)
+  })
+
+  // attach delete handler
+  ledgerTable.querySelectorAll('.delete-exp').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const i = Number(e.target.getAttribute('data-idx'))
+      if(!confirm('Delete this expense?')) return
+      // adjust remaining and friend spent
+      const exp = state.expenses[i]
+      state.expenses.splice(i,1)
+      state.remaining = Math.round((state.remaining + exp.amount)*100)/100
+      const fr = state.friends.find(f=>f.name===exp.spender)
+      if(fr) fr.spent = Math.round((fr.spent - exp.amount)*100)/100
+      try{
+        await saveState()
+        render()
+      }catch(err){
+        alert('Failed to delete: '+err.message)
+      }
+    })
   })
 }
 
