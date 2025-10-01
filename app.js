@@ -23,10 +23,12 @@ const spenderSel = document.getElementById('spender')
 const dateInput = document.getElementById('date')
 const ledgerTable = document.getElementById('ledgerTable').querySelector('tbody')
 
+const API_URL = 'https://canteen-kru3.onrender.com/api/data'
+
 // init
 async function loadState(){
   try {
-    const resp = await fetch('http://localhost:3000/api/data') // Ensure correct server URL
+    const resp = await fetch(API_URL)
     if(resp.ok){
       const j = await resp.json()
       return j
@@ -40,7 +42,7 @@ async function loadState(){
 
 async function saveState(){
   try {
-    const resp = await fetch('http://localhost:3000/api/data', { // Ensure correct server URL
+    const resp = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state)
