@@ -23,36 +23,43 @@ const spenderSel = document.getElementById('spender')
 const dateInput = document.getElementById('date')
 const ledgerTable = document.getElementById('ledgerTable').querySelector('tbody')
 
-const API_URL = 'https://canteen-kru3.onrender.com/api/data'
-
-// init
+// Firebase functions for data persistence
 async function loadState(){
   try {
-    const resp = await fetch(API_URL)
-    if(resp.ok){
-      const j = await resp.json()
-      return j
+    // Wait for Firebase to be initialized
+    while (!window.db) {
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error(`Server responded with status ${resp.status}`)
+    
+    const docRef = window.firestoreDoc(window.db, 'canteen', 'expenses');
+    const docSnap = await window.firestoreGetDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      // Return default data if document doesn't exist
+      console.log('No existing data found, using defaults');
+      return DEFAULT;
+    }
   } catch (error) {
-    console.error('Error loading state:', error)
-    throw new Error('Failed to load state from server')
+    console.error('Error loading state from Firebase:', error);
+    throw new Error('Failed to load state from Firebase: ' + error.message);
   }
 }
 
 async function saveState(){
   try {
-    const resp = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state)
-    })
-    if(!resp.ok){
-      throw new Error(`Server responded with status ${resp.status}`)
+    // Wait for Firebase to be initialized
+    while (!window.db) {
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
+    
+    const docRef = window.firestoreDoc(window.db, 'canteen', 'expenses');
+    await window.firestoreSetDoc(docRef, state);
+    console.log('State saved to Firebase successfully');
   } catch (error) {
-    console.error('Error saving state:', error)
-    throw new Error('Failed to save state to server')
+    console.error('Error saving state to Firebase:', error);
+    throw new Error('Failed to save state to Firebase: ' + error.message);
   }
 }
 

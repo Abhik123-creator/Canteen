@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Migration Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        .success {
+            background: #4caf50;
+        }
+        .error {
+            background: #f44336;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .data-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #4285f4;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Data Migration Tool</h1>
+        <p>This tool helps you migrate your existing canteen data to Firebase.</p>
+
+        <div class="step">
+            <h3>Step 1: Load Your Existing Data</h3>
+            <p>Upload your <code>data.json</code> file to see your current data:</p>
+            <input type="file" id="fileInput" accept=".json" />
+            <div id="dataPreview" class="data-preview" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Migrate to Firebase</h3>
+            <p>Once your data is loaded, click this button to save it to Firebase:</p>
+            <button id="migrateBtn" disabled>📤 Migrate Data to Firebase</button>
+            <button id="testFirebaseBtn">🧪 Test Firebase Connection</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Verify Data</h3>
+            <p>Check if your data was successfully saved to Firebase:</p>
+            <button id="loadFromFirebaseBtn">📥 Load Data from Firebase</button>
+            <div id="firebaseDataPreview" class="data-preview" style="display: none;"></div>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Your Firebase configuration (same as in index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrUpBBaUUCMJHAn4PrLvqca6Y9irf9sVc",
+            authDomain: "canteen-expense-tracker.firebaseapp.com",
+            projectId: "canteen-expense-tracker",
+            storageBucket: "canteen-expense-tracker.firebasestorage.app",
+            messagingSenderId: "645678385425",
+            appId: "1:645678385425:web:491764cd5d7da37b0b24b0",
+            measurementId: "G-MC3CLPQG6V"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentData = null;
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const dataPreview = document.getElementById('dataPreview');
+        const migrateBtn = document.getElementById('migrateBtn');
+        const testFirebaseBtn = document.getElementById('testFirebaseBtn');
+        const loadFromFirebaseBtn = document.getElementById('loadFromFirebaseBtn');
+        const firebaseDataPreview = document.getElementById('firebaseDataPreview');
+        const status = document.getElementById('status');
+
+        function showStatus(message, type = 'success') {
+            status.className = `status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+
+        // File upload handler
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    currentData = JSON.parse(e.target.result);
+                    dataPreview.textContent = JSON.stringify(currentData, null, 2);
+                    dataPreview.style.display = 'block';
+                    migrateBtn.disabled = false;
+                    showStatus('✅ Data loaded successfully! You can now migrate to Firebase.');
+                } catch (error) {
+                    showStatus('❌ Error parsing JSON file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Test Firebase connection
+        testFirebaseBtn.addEventListener('click', async () => {
+            try {
+                showStatus('🔄 Testing Firebase connection...');
+                
+                // Try to read from Firestore
+                const docRef = doc(db, 'canteen', 'expenses');
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    showStatus('✅ Firebase connection successful! Existing data found.');
+                } else {
+                    showStatus('✅ Firebase connection successful! No existing data found (this is normal for first time).');
+                }
+            } catch (error) {
+                showStatus('❌ Firebase connection failed: ' + error.message, 'error');
+                console.error('Firebase error:', error);
+            }
+        });
+
+        // Migrate data to Firebase
+        migrateBtn.addEventListener('click', async () => {
+            if (!currentData) {
+                showStatus('❌ Please load your data.json file first!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('🔄 Migrating data to Firebase...');
+                
+                const docRef = doc(db, 'canteen', 'expenses');
+                await setDoc(docRef, currentData);
+                
+                showStatus('🎉 Data successfully migrated to Firebase!');
+                loadFromFirebaseBtn.click(); // Auto-load to verify
+            } catch (error) {
+                showStatus('❌ Migration failed: ' + error.message, 'error');
+                console.error('Migration error:', error);
+            }
+        });
+
+        // Load data from Firebase
+        loadFromFirebaseBtn.addEventListener('click', async () => {
+            try {
+                showStatus('🔄 Loading data from Firebase...');
+                
+                const docRef = doc(db, 'canteen', 'expenses');
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const firebaseData = docSnap.data();
+                    firebaseDataPreview.textContent = JSON.stringify(firebaseData, null, 2);
+                    firebaseDataPreview.style.display = 'block';
+                    showStatus('✅ Data loaded from Firebase successfully!');
+                } else {
+                    showStatus('⚠️ No data found in Firebase. Please migrate your data first.', 'error');
+                    firebaseDataPreview.style.display = 'none';
+                }
+            } catch (error) {
+                showStatus('❌ Failed to load from Firebase: ' + error.message, 'error');
+                console.error('Load error:', error);
+            }
+        });
+
+        // Auto-test Firebase on page load
+        setTimeout(() => {
+            testFirebaseBtn.click();
+        }, 1000);
+    </script>
+</body>
+</html>
