@@ -233,7 +233,7 @@ document.getElementById('startMonth').addEventListener('click', ()=>{
   render()
 })
 
-// export
+// export JSON
 document.getElementById('exportBtn').addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -242,6 +242,142 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   a.download = `grocery-ledger-${state.month}.json`
   a.click()
   URL.revokeObjectURL(url)
+})
+
+// export XLSX
+document.getElementById('exportXlsxBtn').addEventListener('click', ()=>{
+  try {
+    // Create workbook
+    const wb = XLSX.utils.book_new()
+    
+    // Summary sheet
+    const summaryData = [
+      ['Month', state.month],
+      ['Total Fund', `₹${state.fund}`],
+      ['Remaining', `₹${state.remaining}`],
+      ['Total Spent', `₹${state.fund - state.remaining}`],
+      [''],
+      ['Friends Summary', ''],
+      ['Name', 'Amount Spent']
+    ]
+    
+    state.friends.forEach(friend => {
+      summaryData.push([friend.name, `₹${friend.spent}`])
+    })
+    
+    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData)
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary')
+    
+    // Expenses sheet
+    const expensesData = [
+      ['Date', 'Spender', 'Amount', 'Description', 'Items Details']
+    ]
+    
+    state.expenses.forEach(expense => {
+      const itemsText = expense.items && expense.items.length 
+        ? expense.items.map(item => `${item.name} x${item.qty} ₹${item.price}`).join('; ')
+        : ''
+      
+      expensesData.push([
+        expense.date,
+        expense.spender,
+        `₹${expense.amount}`,
+        expense.description || '',
+        itemsText
+      ])
+    })
+    
+    const expensesWs = XLSX.utils.aoa_to_sheet(expensesData)
+    XLSX.utils.book_append_sheet(wb, expensesWs, 'Expenses')
+    
+    // Detailed Items sheet
+    const itemsData = [
+      ['Date', 'Spender', 'Item Name', 'Quantity', 'Price', 'Total', 'Expense Description']
+    ]
+    
+    state.expenses.forEach(expense => {
+      if (expense.items && expense.items.length > 0) {
+        expense.items.forEach(item => {
+          itemsData.push([
+            expense.date,
+            expense.spender,
+            item.name,
+            item.qty,
+            `₹${item.price}`,
+            `₹${item.qty * item.price}`,
+            expense.description || ''
+          ])
+        })
+      } else {
+        // For expenses without item details
+        itemsData.push([
+          expense.date,
+          expense.spender,
+          'General Expense',
+          1,
+          `₹${expense.amount}`,
+          `₹${expense.amount}`,
+          expense.description || ''
+        ])
+      }
+    })
+    
+    const itemsWs = XLSX.utils.aoa_to_sheet(itemsData)
+    XLSX.utils.book_append_sheet(wb, itemsWs, 'Item Details')
+    
+    // Monthly Analysis sheet
+    const monthlyData = [
+      ['Monthly Analysis', ''],
+      ['Total Expenses by Friend', ''],
+      ['Friend', 'Amount', 'Percentage of Total']
+    ]
+    
+    const totalSpent = state.fund - state.remaining
+    state.friends.forEach(friend => {
+      const percentage = totalSpent > 0 ? ((friend.spent / totalSpent) * 100).toFixed(1) : 0
+      monthlyData.push([
+        friend.name,
+        `₹${friend.spent}`,
+        `${percentage}%`
+      ])
+    })
+    
+    monthlyData.push(['', '', ''])
+    monthlyData.push(['Daily Spending Analysis', '', ''])
+    monthlyData.push(['Date', 'Total Spent', 'Number of Transactions'])
+    
+    // Group expenses by date
+    const dailySpending = {}
+    state.expenses.forEach(expense => {
+      if (!dailySpending[expense.date]) {
+        dailySpending[expense.date] = { total: 0, count: 0 }
+      }
+      dailySpending[expense.date].total += expense.amount
+      dailySpending[expense.date].count += 1
+    })
+    
+    Object.keys(dailySpending).sort().forEach(date => {
+      monthlyData.push([
+        date,
+        `₹${dailySpending[date].total}`,
+        dailySpending[date].count
+      ])
+    })
+    
+    const monthlyWs = XLSX.utils.aoa_to_sheet(monthlyData)
+    XLSX.utils.book_append_sheet(wb, monthlyWs, 'Analysis')
+    
+    // Generate and download file
+    const filename = `canteen-expenses-${state.month}.xlsx`
+    XLSX.writeFile(wb, filename)
+    
+    // Show success message
+    alert(`📊 Excel file "${filename}" has been downloaded successfully!\n\nThe file contains 4 sheets:\n• Summary - Overview and friend totals\n• Expenses - All transactions\n• Item Details - Individual item breakdown\n• Analysis - Monthly spending analysis`)
+    
+  } catch (error) {
+    console.error('XLSX Export Error:', error)
+    alert('❌ Failed to export Excel file. Please try again or use JSON export as backup.')
+  }
 })
 
 // import

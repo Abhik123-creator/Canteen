@@ -6,6 +6,9 @@
   <title>Grocery Ledger</title>
   <link rel="stylesheet" href="style.css" />
   
+  <!-- SheetJS library for XLSX export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
   <script type="module">
     // Import Firebase SDKs
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -36,6 +39,7 @@
     <div class="actions">
       <button id="startMonth" class="btn btn-outline">Start New Month</button>
       <button id="exportBtn" class="btn btn-primary">Export JSON</button>
+      <button id="exportXlsxBtn" class="btn btn-primary">📊 Export Excel</button>
       <label class="btn btn-ghost" for="importFile">Import JSON</label>
       <input id="importFile" type="file" accept="application/json" style="display:none" />
     </div>

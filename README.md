@@ -14,7 +14,8 @@ A modern, cloud-powered expense tracking application for managing canteen/grocer
 - 📱 **Mobile Responsive** - Works perfectly on all devices
 - ☁️ **Cloud Storage** - Data stored securely in Firebase Firestore
 - 🔄 **Real-time Sync** - Multiple users can access simultaneously
-- 📤 **Export/Import** - Backup and restore data easily
+- 📤 **Export/Import** - Backup and restore data easily (JSON & Excel formats)
+- 📊 **Excel Export** - Professional XLSX reports with 4 detailed sheets
 - 🆕 **New Month Setup** - Reset budget and expenses for new month
 
 ## 🚀 **Technology Stack**
@@ -70,7 +71,13 @@ Simply visit: **[https://abhik123-creator.github.io/Canteen/](https://abhik123-c
 ### Managing Budget
 - **Add Funds**: Use the "Add Funds" feature to increase monthly budget
 - **New Month**: Reset budget and clear expenses for a fresh start
-- **Export Data**: Download your data as JSON for backup
+- **Export Data**: Download as JSON (for backup) or Excel (for analysis)
+
+### Excel Export Features
+- **📋 Summary Sheet**: Monthly overview and friend totals
+- **📝 Expenses Sheet**: Complete transaction history  
+- **🛒 Item Details**: Individual item breakdown with quantities and prices
+- **📊 Analysis Sheet**: Spending patterns and daily analysis
 
 ### Multi-User Setup
 Share your app URL with friends - they can all add expenses to the same shared database!
