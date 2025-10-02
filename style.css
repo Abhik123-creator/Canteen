@@ -7,14 +7,32 @@
   --glass: rgba(255,255,255,0.6);
   --danger: #ff4d4f;
 }
+/* Dark theme variables */
+.dark{
+  --bg: #0b1220;
+  --bg-start: #071022;
+  --card: #0f1724;
+  --accent: #60a5fa;
+  --accent-2: #34d399;
+  --muted: #9aa6b2;
+  --glass: rgba(255,255,255,0.03);
+  --danger: #ff6b6b;
+  color-scheme: dark;
+}
 *{box-sizing:border-box}
 body{
   margin:0;
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-  background: linear-gradient(180deg,#eef6ff 0%,var(--bg) 100%);
-  color:#111827;
+  background: linear-gradient(180deg,var(--bg-start, #eef6ff) 0%,var(--bg) 100%);
+  color:var(--text-color, #111827);
   -webkit-font-smoothing:antialiased;
 }
+/* Smooth theme transitions */
+body, .card, .stat-card, table, .friend { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease }
+
+/* Adjust text color driven by variable */
+body { color: var(--text-color, #111827) }
+.dark body { --text-color: #e6eef8 }
 .topbar{
   display:flex;
   justify-content:space-between;
@@ -26,6 +44,20 @@ body{
   flex-wrap:wrap;
   row-gap:8px;
 }
+
+/* Dark mode visual overrides */
+.dark .topbar{
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-bottom-color: rgba(255,255,255,0.03);
+}
+.dark .card{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 6px 18px rgba(2,6,23,0.6) }
+.dark .stat-card{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) }
+.dark .friend{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) }
+.dark .items-list .item-row{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) }
+.dark th, .dark td{ border-bottom-color: rgba(255,255,255,0.03) }
+.dark .btn-ghost{ color: var(--accent) }
+.dark .stat-label, .dark .stat-extra, .dark .form-row label, .dark .footer{ color: var(--muted) }
+.dark body { color: var(--text-color, #e6eef8) }
 .brand{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .actions .btn, .actions label{min-width:0;padding:6px 10px}
@@ -37,6 +69,24 @@ body{
 .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 16px rgba(2,6,23,0.06);overflow:hidden}
 .summary{grid-column:1 / span 2;display:flex;flex-direction:column;gap:14px}
 .summary-row{display:flex;gap:30px;flex-direction:row;align-items:center}
+.stat-cards{display:flex;gap:12px;flex-wrap:wrap}
+.stat-card{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:12px;box-shadow:0 6px 16px rgba(2,6,23,0.03);min-width:180px}
+.stat-card{position:relative}
+.stat-card.small{min-width:140px}
+.stat-icon{font-size:22px}
+.stat-body{display:flex;flex-direction:column}
+.stat-label{font-size:12px;color:var(--muted)}
+.stat-value{font-weight:800;font-size:18px}
+.stat-extra{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* Add funds card specific */
+.add-fund-card input{width:100px;padding:6px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
+.add-fund-card .btn{padding:6px 8px}
+
+/* Ensure add-fund input is focusable and not covered by other elements */
+.add-fund-card input{position:relative;z-index:5;pointer-events:auto}
+.add-fund-card .btn{position:relative;z-index:5}
+.add-fund-card .stat-body{position:relative;z-index:4}
 .label{font-size:12px;color:var(--muted)}
 .value{font-weight:700;font-size:20px}
 .friends-list{display:flex;gap:12px;flex-wrap:wrap}
@@ -80,4 +130,6 @@ th{background:transparent;color:var(--muted);font-weight:600}
   .items-list .item-row{font-size:14px}
   .add-fund{flex-direction:column;align-items:stretch}
   .add-fund input{width:100%}
+
+  .btn[disabled]{opacity:0.6;cursor:not-allowed}
 }

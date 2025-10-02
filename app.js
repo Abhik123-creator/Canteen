@@ -18,6 +18,8 @@ let state = loadState()
 const totalFundEl = document.getElementById('totalFund')
 const remainingEl = document.getElementById('remaining')
 const monthEl = document.getElementById('month')
+const totalSpentEl = document.getElementById('totalSpent')
+const expenseCountEl = document.getElementById('expenseCount')
 const friendsList = document.getElementById('friendsList')
 const spenderSel = document.getElementById('spender')
 const dateInput = document.getElementById('date')
@@ -78,6 +80,12 @@ function render(){
   remainingEl.textContent = `₹${state.remaining}`
   monthEl.textContent = state.month
 
+  // stats
+  // total spent should exclude fund/top-up entries
+  const totalSpent = state.expenses.reduce((s,e)=> e && e.type === 'fund' ? s : s + (Number(e.amount)||0), 0)
+  if(totalSpentEl) totalSpentEl.textContent = `₹${totalSpent.toFixed(2)}`
+  if(expenseCountEl) expenseCountEl.textContent = `${state.expenses.length} expense${state.expenses.length===1?'':'s'}`
+
   // friends
   friendsList.innerHTML = ''
   state.friends.forEach(f=>{
@@ -103,7 +111,12 @@ function render(){
     const tr = document.createElement('tr')
     const itemsText = exp.items && exp.items.length ? exp.items.map(i=>`${i.name} x${i.qty} ₹${(i.price).toFixed(2)}`).join('; ') : ''
     const desc = [exp.description || '', itemsText].filter(Boolean).join(' — ')
-    tr.innerHTML = `<td>${exp.date}</td><td>${exp.spender}</td><td>₹${exp.amount}</td><td>${desc}</td><td><button data-idx="${idx}" class="btn btn-danger delete-exp">Delete</button></td>`
+    // If this is a fund/top-up entry, render differently
+    if(exp.type === 'fund'){
+      tr.innerHTML = `<td>${exp.date}</td><td>Top-up</td><td style="color:var(--accent-2);font-weight:700">+₹${(exp.amount).toFixed(2)}</td><td>${desc || 'Added funds'}</td><td><button data-idx="${idx}" class="btn btn-danger delete-exp">Delete</button></td>`
+    } else {
+      tr.innerHTML = `<td>${exp.date}</td><td>${exp.spender}</td><td>₹${exp.amount}</td><td>${desc}</td><td><button data-idx="${idx}" class="btn btn-danger delete-exp">Delete</button></td>`
+    }
     ledgerTable.appendChild(tr)
   })
 
@@ -112,12 +125,19 @@ function render(){
     btn.addEventListener('click', async (e)=>{
       const i = Number(e.target.getAttribute('data-idx'))
       if(!confirm('Delete this expense?')) return
-      // adjust remaining and friend spent
+      // adjust remaining and friend spent (handle fund/top-up specially)
       const exp = state.expenses[i]
       state.expenses.splice(i,1)
-      state.remaining = Math.round((state.remaining + exp.amount)*100)/100
-      const fr = state.friends.find(f=>f.name===exp.spender)
-      if(fr) fr.spent = Math.round((fr.spent - exp.amount)*100)/100
+      if(exp.type === 'fund'){
+        // removing a fund reduces total fund and remaining
+        state.fund = Math.round((state.fund - exp.amount)*100)/100
+        state.remaining = Math.round((state.remaining - exp.amount)*100)/100
+      } else {
+        // regular expense removal: refund remaining and reduce spender's spent
+        state.remaining = Math.round((state.remaining + exp.amount)*100)/100
+        const fr = state.friends.find(f=>f.name===exp.spender)
+        if(fr) fr.spent = Math.round((fr.spent - exp.amount)*100)/100
+      }
       try{
         await saveState()
         render()
@@ -401,22 +421,88 @@ document.getElementById('importFile').addEventListener('change', e=>{
   reader.readAsText(file)
 })
 
-// Add funds handler
+// Add funds handler (improved UX)
 const addFundBtn = document.getElementById('addFundBtn')
 const addFundAmount = document.getElementById('addFundAmount')
 addFundBtn.addEventListener('click', async ()=>{
-  const v = parseFloat(addFundAmount.value)
-  if(!v || v<=0) return alert('Enter a valid amount')
-  state.fund = Math.round((state.fund + v)*100)/100
-  state.remaining = Math.round((state.remaining + v)*100)/100
+  const raw = addFundAmount.value
+  const v = parseFloat(raw)
+  if(Number.isNaN(v) || v <= 0){
+    return alert('Enter a valid amount greater than 0')
+  }
+
+  // Round to two decimals
+  const amount = Math.round(v * 100) / 100
+
+  // Double-check with user
+  const ok = confirm(`Add funds: ₹${amount.toFixed(2)} to total fund?`)
+  if(!ok) return
+
+  // Disable button while saving
+  addFundBtn.disabled = true
+  addFundBtn.textContent = 'Adding...'
+
+  state.fund = Math.round((state.fund + amount)*100)/100
+  state.remaining = Math.round((state.remaining + amount)*100)/100
   try{
+    // record as a fund/top-up entry so it appears in the ledger
+    const fundEntry = { date: new Date().toISOString().slice(0,10), type: 'fund', amount, description: 'Added funds', spender: 'Top-up', items: [] }
+    state.expenses.push(fundEntry)
     await saveState()
     render()
     addFundAmount.value = ''
+    alert(`✅ Added ₹${amount.toFixed(2)} to fund`)
   }catch(err){
-    alert('Failed to add funds: '+err.message)
+    console.error('Add fund error:', err)
+    alert('❌ Failed to add funds: '+err.message)
+  }finally{
+    addFundBtn.disabled = false
+    addFundBtn.textContent = 'Add'
   }
 })
 
+// Debug helpers: log focus/click events to help diagnose input issues
+if(addFundAmount){
+  addFundAmount.addEventListener('focus', ()=>console.log('addFundAmount focused'))
+  addFundAmount.addEventListener('click', ()=>console.log('addFundAmount clicked'))
+}
+
 // initial render
 render()
+
+// Theme toggle: persist preference in localStorage
+const themeToggleBtn = document.getElementById('themeToggle')
+function applyTheme(theme){
+  if(theme === 'dark'){
+    document.documentElement.classList.add('dark')
+    if(themeToggleBtn) themeToggleBtn.setAttribute('aria-pressed','true')
+    if(themeToggleBtn) themeToggleBtn.textContent = '☀️'
+  } else {
+    document.documentElement.classList.remove('dark')
+    if(themeToggleBtn) themeToggleBtn.setAttribute('aria-pressed','false')
+    if(themeToggleBtn) themeToggleBtn.textContent = '🌙'
+  }
+}
+
+// load saved theme or system preference
+(function initTheme(){
+  const saved = localStorage.getItem('canteen_theme')
+  if(saved){ console.log('initTheme: saved theme', saved); applyTheme(saved); return }
+  // No saved preference — default the entire scheme to dark
+  const defaultTheme = 'dark'
+  console.log('initTheme: no saved theme, defaulting to', defaultTheme)
+  applyTheme(defaultTheme)
+  try{ localStorage.setItem('canteen_theme', defaultTheme) }catch(e){ console.warn('Could not persist default theme', e) }
+})()
+
+if(themeToggleBtn){
+  themeToggleBtn.addEventListener('click', ()=>{
+    console.log('themeToggle clicked — before:', document.documentElement.className)
+    // toggle class directly and apply theme to keep UI in sync
+    const nowDark = document.documentElement.classList.toggle('dark')
+    const newTheme = nowDark ? 'dark' : 'light'
+    console.log('themeToggle result — nowDark:', nowDark)
+    applyTheme(newTheme)
+    try{ localStorage.setItem('canteen_theme', newTheme) }catch(e){ console.warn('Failed to save theme:', e) }
+  })
+}
