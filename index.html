@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -8,6 +8,8 @@
   
   <!-- SheetJS library for XLSX export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <!-- WhatsApp integration removed -->
   
   <script type="module">
     // Import Firebase SDKs
@@ -137,8 +139,31 @@
       </form>
     </section>
 
+    <!-- WhatsApp Integration removed -->
+
+    <!-- Reports Section -->
+    <section class="card reports-card">
+      <h3>Reports & Insights</h3>
+      <div class="reports-controls">
+  <button id="report7" type="button" class="btn btn-outline">Last 7 days</button>
+  <button id="report30" type="button" class="btn btn-outline">Last 30 days</button>
+        <label class="small-muted">From <input id="reportFrom" type="date" /></label>
+        <label class="small-muted">To <input id="reportTo" type="date" /></label>
+  <button id="reportCustom" type="button" class="btn btn-primary">Generate</button>
+      </div>
+      <div id="reportResults" class="report-results"></div>
+    </section>
+
     <section class="card ledger-card">
       <h3>Expense Ledger</h3>
+      <div class="ledger-filters">
+        <input id="ledgerSearch" type="search" placeholder="Search ledger (spender, desc, items, amount)" />
+        <select id="filterSpender"><option value="all">All spenders</option></select>
+        <select id="filterType"><option value="all">All types</option><option value="expense">Expense</option><option value="fund">Top-up</option></select>
+        <label class="small-muted">From <input id="filterFrom" type="date" /></label>
+        <label class="small-muted">To <input id="filterTo" type="date" /></label>
+        <button id="clearFilters" class="btn btn-outline">Clear</button>
+      </div>
       <div class="table-wrap">
         <table id="ledgerTable">
           <thead>
@@ -160,6 +185,21 @@
 
   <footer class="footer">Built for 5 friends • Hosted on GitHub Pages</footer>
 
+  <!-- Confirmation modal (used for delete/critical confirmations) -->
+  <div id="confirmModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true">
+      <div class="modal-body">
+        <div id="confirmMessage">Are you sure?</div>
+        <div class="modal-actions">
+          <button id="confirmCancel" class="btn btn-outline">Cancel</button>
+          <button id="confirmOk" class="btn btn-danger">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="analytics.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

@@ -25,6 +25,68 @@ const spenderSel = document.getElementById('spender')
 const dateInput = document.getElementById('date')
 const ledgerTable = document.getElementById('ledgerTable').querySelector('tbody')
 
+// ledger filter elements - will be initialized after DOM loads
+let ledgerSearch, filterSpender, filterType, filterFrom, filterTo, clearFiltersBtn
+let filtersBound = false
+
+function initFilterElements(){
+  ledgerSearch = document.getElementById('ledgerSearch')
+  filterSpender = document.getElementById('filterSpender')
+  filterType = document.getElementById('filterType')
+  filterFrom = document.getElementById('filterFrom')
+  filterTo = document.getElementById('filterTo')
+  clearFiltersBtn = document.getElementById('clearFilters')
+  
+  console.log('Filter elements initialized:', {
+    ledgerSearch: !!ledgerSearch,
+    filterSpender: !!filterSpender,
+    filterType: !!filterType,
+    filterFrom: !!filterFrom,
+    filterTo: !!filterTo,
+    clearFiltersBtn: !!clearFiltersBtn
+  })
+}
+
+function bindLedgerFilters(){
+  if(filtersBound) return
+  
+  if(!ledgerSearch) initFilterElements()
+  
+  if(ledgerSearch) {
+    ledgerSearch.addEventListener('input', ()=> {
+      console.log('Search input:', ledgerSearch.value)
+      render()
+    })
+  }
+  if(filterSpender) {
+    filterSpender.addEventListener('change', ()=> {
+      console.log('Spender filter:', filterSpender.value)
+      render()
+    })
+  }
+  if(filterType) {
+    filterType.addEventListener('change', ()=> {
+      console.log('Type filter:', filterType.value)
+      render()
+    })
+  }
+  if(filterFrom) filterFrom.addEventListener('change', ()=> render())
+  if(filterTo) filterTo.addEventListener('change', ()=> render())
+  if(clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', ()=>{
+      console.log('Clearing filters')
+      if(ledgerSearch) ledgerSearch.value = ''
+      if(filterSpender) filterSpender.value = 'all'
+      if(filterType) filterType.value = 'all'
+      if(filterFrom) filterFrom.value = ''
+      if(filterTo) filterTo.value = ''
+      render()
+    })
+  }
+  filtersBound = true
+  console.log('Filter listeners bound successfully')
+}
+
 // Firebase functions for data persistence
 async function loadState(){
   try {
@@ -70,6 +132,8 @@ async function saveState(){
   try{
     state = await loadState()
     render()
+    // bind filter listeners after initial render
+    try{ bindLedgerFilters() }catch(e){ console.warn('bindLedgerFilters failed', e) }
   }catch(e){
     alert('Failed to load data from server: ' + e.message)
   }
@@ -104,10 +168,50 @@ function render(){
     spenderSel.appendChild(opt)
   })
 
-  // ledger
+  // ensure filter elements are initialized
+  if(!filterSpender) initFilterElements()
+  
+  // populate filterSpender
+  if(filterSpender){
+    const currentValue = filterSpender.value || 'all'
+    filterSpender.innerHTML = '<option value="all">All spenders</option>'
+    state.friends.forEach(f=>{
+      const o = document.createElement('option')
+      o.value = f.name
+      o.textContent = f.name
+      filterSpender.appendChild(o)
+    })
+    filterSpender.value = currentValue
+  }
+
+  // ledger with filters applied
   ledgerTable.innerHTML = ''
+  // read filters
+  const q = ledgerSearch && ledgerSearch.value ? ledgerSearch.value.trim().toLowerCase() : ''
+  const spenderFilter = filterSpender && filterSpender.value ? filterSpender.value : 'all'
+  const typeFilter = filterType && filterType.value ? filterType.value : 'all'
+  const fromDate = filterFrom && filterFrom.value ? filterFrom.value : null
+  const toDate = filterTo && filterTo.value ? filterTo.value : null
+  
+  console.log('Active filters:', { q, spenderFilter, typeFilter, fromDate, toDate })
+
   state.expenses.slice().reverse().forEach((exp, revIdx)=>{
     const idx = state.expenses.length - 1 - revIdx // original index
+    // apply filters
+    if(typeFilter !== 'all'){
+      if(typeFilter === 'expense' && exp.type === 'fund') return
+      if(typeFilter === 'fund' && exp.type !== 'fund') return
+    }
+    if(spenderFilter !== 'all'){
+      if(exp.spender !== spenderFilter) return
+    }
+    if(fromDate && exp.date < fromDate) return
+    if(toDate && exp.date > toDate) return
+    if(q){
+      const itemsStr = exp.items && exp.items.length ? exp.items.map(i=>`${i.name} x${i.qty} ₹${(i.price).toFixed(2)}`).join('; ') : ''
+      const hay = `${exp.date} ${exp.spender || ''} ${exp.description || ''} ${itemsStr} ${exp.amount}`.toLowerCase()
+      if(!hay.includes(q)) return
+    }
     const tr = document.createElement('tr')
     const itemsText = exp.items && exp.items.length ? exp.items.map(i=>`${i.name} x${i.qty} ₹${(i.price).toFixed(2)}`).join('; ') : ''
     const desc = [exp.description || '', itemsText].filter(Boolean).join(' — ')
@@ -120,32 +224,34 @@ function render(){
     ledgerTable.appendChild(tr)
   })
 
-  // attach delete handler
+  // attach delete handler using modal confirmation
   ledgerTable.querySelectorAll('.delete-exp').forEach(btn=>{
-    btn.addEventListener('click', async (e)=>{
+    btn.addEventListener('click', (e)=>{
       const i = Number(e.target.getAttribute('data-idx'))
-      if(!confirm('Delete this expense?')) return
-      // adjust remaining and friend spent (handle fund/top-up specially)
-      const exp = state.expenses[i]
-      state.expenses.splice(i,1)
-      if(exp.type === 'fund'){
-        // removing a fund reduces total fund and remaining
-        state.fund = Math.round((state.fund - exp.amount)*100)/100
-        state.remaining = Math.round((state.remaining - exp.amount)*100)/100
-      } else {
-        // regular expense removal: refund remaining and reduce spender's spent
-        state.remaining = Math.round((state.remaining + exp.amount)*100)/100
-        const fr = state.friends.find(f=>f.name===exp.spender)
-        if(fr) fr.spent = Math.round((fr.spent - exp.amount)*100)/100
-      }
-      try{
-        await saveState()
-        render()
-      }catch(err){
-        alert('Failed to delete: '+err.message)
-      }
+      showConfirm(`Delete this expense on ${state.expenses[i].date} by ${state.expenses[i].spender || 'Top-up'} for ₹${state.expenses[i].amount}?`, async (ok)=>{
+        if(!ok) return
+        // perform deletion
+        const exp = state.expenses[i]
+        state.expenses.splice(i,1)
+        if(exp.type === 'fund'){
+          state.fund = Math.round((state.fund - exp.amount)*100)/100
+          state.remaining = Math.round((state.remaining - exp.amount)*100)/100
+        } else {
+          state.remaining = Math.round((state.remaining + exp.amount)*100)/100
+          const fr = state.friends.find(f=>f.name===exp.spender)
+          if(fr) fr.spent = Math.round((fr.spent - exp.amount)*100)/100
+        }
+        try{
+          await saveState()
+          render()
+        }catch(err){
+          alert('Failed to delete: '+err.message)
+        }
+      })
     })
   })
+
+  // end of render
 }
 
 // form defaults
@@ -461,14 +567,102 @@ addFundBtn.addEventListener('click', async ()=>{
   }
 })
 
+// -------------------------
+// Reports & Insights wiring
+// -------------------------
+function isoDateNDaysAgo(n){
+  const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10)
+}
+
+function renderReportResults(summary, periodText){
+  const el = document.getElementById('reportResults')
+  if(!el) return
+  el.innerHTML = ''
+  const wrap = document.createElement('div')
+  wrap.className = 'report-summary'
+  const text = Analytics.generateTemplateSummary(summary, periodText)
+  const pre = document.createElement('pre')
+  pre.style.whiteSpace = 'pre-wrap'
+  pre.textContent = text
+  wrap.appendChild(pre)
+
+  // breakdown by category
+  const breakdown = document.createElement('div')
+  breakdown.className = 'report-breakdown'
+  for(const [cat, amt] of Object.entries(summary.byCategory)){
+    const pill = document.createElement('div')
+    pill.className = 'report-pill'
+    pill.innerHTML = `<strong>${cat}</strong><div>₹${Math.round(amt)}</div>`
+    breakdown.appendChild(pill)
+  }
+  wrap.appendChild(breakdown)
+  el.appendChild(wrap)
+}
+
+document.getElementById('report7').addEventListener('click', ()=>{
+  try{
+    const from = isoDateNDaysAgo(6) // last 7 days inclusive
+    const to = new Date().toISOString().slice(0,10)
+    const ex = Analytics.filterByRange(state.expenses, from, to)
+    const summary = Analytics.summarize(ex)
+    renderReportResults(summary, `Last 7 days (${from} → ${to})`)
+  }catch(err){
+    const el = document.getElementById('reportResults')
+    if(el) el.textContent = 'Failed to generate report: ' + err.message
+    console.error('report7 error', err)
+  }
+})
+
+document.getElementById('report30').addEventListener('click', ()=>{
+  try{
+    const from = isoDateNDaysAgo(29)
+    const to = new Date().toISOString().slice(0,10)
+    const ex = Analytics.filterByRange(state.expenses, from, to)
+    const summary = Analytics.summarize(ex)
+    renderReportResults(summary, `Last 30 days (${from} → ${to})`)
+  }catch(err){
+    const el = document.getElementById('reportResults')
+    if(el) el.textContent = 'Failed to generate report: ' + err.message
+    console.error('report30 error', err)
+  }
+})
+
+document.getElementById('reportCustom').addEventListener('click', ()=>{
+  try{
+    const from = document.getElementById('reportFrom').value
+    const to = document.getElementById('reportTo').value
+    if(!from || !to) return alert('Choose both From and To dates')
+    const ex = Analytics.filterByRange(state.expenses, from, to)
+    const summary = Analytics.summarize(ex)
+    renderReportResults(summary, `${from} → ${to}`)
+  }catch(err){
+    const el = document.getElementById('reportResults')
+    if(el) el.textContent = 'Failed to generate report: ' + err.message
+    console.error('reportCustom error', err)
+  }
+})
+
 // Debug helpers: log focus/click events to help diagnose input issues
 if(addFundAmount){
   addFundAmount.addEventListener('focus', ()=>console.log('addFundAmount focused'))
   addFundAmount.addEventListener('click', ()=>console.log('addFundAmount clicked'))
 }
 
-// initial render
-render()
+// ensure final render and filter binding after DOM is fully ready
+setTimeout(()=>{
+  try{ 
+    // final render to make sure everything is displayed
+    render()
+    // bind filters after DOM is ready
+    if(!filtersBound) {
+      bindLedgerFilters()
+    }
+    // add UI loaded class for animations
+    document.documentElement.classList.add('ui-loaded') 
+  }catch(e){
+    console.warn('Final initialization failed:', e)
+  }
+}, 100)
 
 // Theme toggle: persist preference in localStorage
 const themeToggleBtn = document.getElementById('themeToggle')
@@ -505,4 +699,26 @@ if(themeToggleBtn){
     applyTheme(newTheme)
     try{ localStorage.setItem('canteen_theme', newTheme) }catch(e){ console.warn('Failed to save theme:', e) }
   })
+}
+
+// Confirmation modal helpers
+const confirmModal = document.getElementById('confirmModal')
+const confirmMessageEl = document.getElementById('confirmMessage')
+const confirmOkBtn = document.getElementById('confirmOk')
+const confirmCancelBtn = document.getElementById('confirmCancel')
+
+function showConfirm(message, callback){
+  if(!confirmModal) return callback(true)
+  confirmMessageEl.textContent = message
+  confirmModal.setAttribute('aria-hidden','false')
+  // temporary handlers
+  function ok(){ cleanup(); callback(true) }
+  function cancel(){ cleanup(); callback(false) }
+  function cleanup(){
+    confirmOkBtn.removeEventListener('click', ok)
+    confirmCancelBtn.removeEventListener('click', cancel)
+    confirmModal.setAttribute('aria-hidden','true')
+  }
+  confirmOkBtn.addEventListener('click', ok)
+  confirmCancelBtn.addEventListener('click', cancel)
 }

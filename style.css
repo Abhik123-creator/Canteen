@@ -1,6 +1,7 @@
 :root{
   --bg: #f6f9fc;
   --card: #ffffff;
+  --border: rgba(15,23,42,0.06);
   --accent: #0066ff;
   --accent-2: #00c7a4;
   --muted: #6b7280;
@@ -9,14 +10,24 @@
 }
 /* Dark theme variables */
 .dark{
-  --bg: #0b1220;
-  --bg-start: #071022;
-  --card: #0f1724;
-  --accent: #60a5fa;
-  --accent-2: #34d399;
-  --muted: #9aa6b2;
-  --glass: rgba(255,255,255,0.03);
+  /* Requested scheme:
+     primary dark:  #090040
+     deep purple:   #471396
+     bright purple: #B13BFF
+     highlight/yellow: #FFCC00
+  */
+  --bg: #090040;           /* main page background */
+  --bg-start: #0b0038;     /* gradient start */
+  /* make card surface a subtle purple translucent so it stands out on the deep navy bg */
+  --card: rgba(71,19,150,0.12); /* derived from #471396 */
+  --accent: #471396;       /* darker purple */
+  --accent-2: #B13BFF;     /* bright purple */
+  --highlight: #FFCC00;    /* yellow highlight */
+  --muted: #bcb6d9;        /* muted text */
+  --glass: rgba(255,255,255,0.02);
+  --border: rgba(255,255,255,0.08);
   --danger: #ff6b6b;
+  --text-color: #f6f7ff;   /* primary text */
   color-scheme: dark;
 }
 *{box-sizing:border-box}
@@ -28,7 +39,26 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 /* Smooth theme transitions */
-body, .card, .stat-card, table, .friend { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease }
+/* Smooth theme transitions */
+body, .card, .stat-card, table, .friend, .btn { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease }
+
+/* Entrance and micro-interaction animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatSlow {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes pulseAccent {
+  0% { box-shadow: 0 0 0 0 rgba(177,59,255,0.16); }
+  70% { box-shadow: 0 0 0 10px rgba(177,59,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(177,59,255,0); }
+}
 
 /* Adjust text color driven by variable */
 body { color: var(--text-color, #111827) }
@@ -48,29 +78,45 @@ body { color: var(--text-color, #111827) }
 /* Dark mode visual overrides */
 .dark .topbar{
   background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border-bottom-color: rgba(255,255,255,0.03);
+  border-bottom-color: rgba(255,255,255,0.04);
 }
-.dark .card{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 6px 18px rgba(2,6,23,0.6) }
-.dark .stat-card{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) }
-.dark .friend{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) }
-.dark .items-list .item-row{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) }
-.dark th, .dark td{ border-bottom-color: rgba(255,255,255,0.03) }
-.dark .btn-ghost{ color: var(--accent) }
+.dark .card{
+  /* use the purple-tinted card variable so cards contrast with the navy background */
+  background: linear-gradient(180deg, var(--card), rgba(71,19,150,0.08));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 12px 40px rgba(7,3,40,0.6);
+}
+.dark .stat-card{ background: linear-gradient(180deg, var(--card), rgba(71,19,150,0.06)) }
+.dark .friend{ background: linear-gradient(180deg, var(--card), rgba(71,19,150,0.06)) }
+.dark .items-list .item-row{ background: linear-gradient(180deg, rgba(71,19,150,0.06), rgba(71,19,150,0.04)) }
+.dark th, .dark td{ border-bottom-color: rgba(255,255,255,0.04) }
+.dark .btn-ghost{ color: var(--highlight) }
 .dark .stat-label, .dark .stat-extra, .dark .form-row label, .dark .footer{ color: var(--muted) }
-.dark body { color: var(--text-color, #e6eef8) }
+.dark body { color: var(--text-color, #f6f7ff) }
+
+/* Buttons and accents tuned to the scheme */
+.btn-primary{ background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #fff }
+.btn-ghost{ color: var(--highlight) }
+.stat-value{ color: var(--text-color) }
+.friend .spent{ color: var(--accent-2) }
+.stat-icon{ color: var(--accent-2) }
+.footer{ color: var(--muted) }
+
+/* Highlight for small important UI pieces */
+.highlight { color: var(--highlight); font-weight:700 }
 .brand{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .actions .btn, .actions label{min-width:0;padding:6px 10px}
 .btn{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
-.btn-primary{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white}
+.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white}
 .btn-outline{background:transparent;border:1px solid rgba(15,23,42,0.06)}
 .btn-ghost{background:transparent;color:var(--accent)}
 .container{max-width:1100px;margin:28px auto;display:grid;grid-template-columns:1fr 360px;gap:20px;padding:0 18px}
-.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 16px rgba(2,6,23,0.06);overflow:hidden}
+.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(7,3,40,0.45);overflow:hidden}
 .summary{grid-column:1 / span 2;display:flex;flex-direction:column;gap:14px}
 .summary-row{display:flex;gap:30px;flex-direction:row;align-items:center}
 .stat-cards{display:flex;gap:12px;flex-wrap:wrap}
-.stat-card{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:12px;box-shadow:0 6px 16px rgba(2,6,23,0.03);min-width:180px}
+.stat-card{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,var(--card),rgba(255,255,255,0.02));padding:12px;border-radius:12px;box-shadow:0 8px 22px rgba(7,3,40,0.45);min-width:180px}
 .stat-card{position:relative}
 .stat-card.small{min-width:140px}
 .stat-icon{font-size:22px}
@@ -78,6 +124,15 @@ body { color: var(--text-color, #111827) }
 .stat-label{font-size:12px;color:var(--muted)}
 .stat-value{font-weight:800;font-size:18px}
 .stat-extra{font-size:12px;color:var(--muted);margin-top:6px}
+
+.stat-cards .stat-card{ opacity:1; transform:none; }
+.ui-loaded .stat-cards .stat-card{ animation: fadeInUp 420ms cubic-bezier(.2,.8,.2,1) both }
+.stat-cards .stat-card:nth-child(1){ animation-delay: 80ms }
+.stat-cards .stat-card:nth-child(2){ animation-delay: 160ms }
+.stat-cards .stat-card:nth-child(3){ animation-delay: 240ms }
+.stat-cards .stat-card:nth-child(4){ animation-delay: 320ms }
+.stat-card:hover{ transform: translateY(-6px); box-shadow: 0 14px 40px rgba(0,0,0,0.45) }
+.stat-card:hover .stat-icon{ animation: pulseAccent 1200ms infinite; }
 
 /* Add funds card specific */
 .add-fund-card input{width:100px;padding:6px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
@@ -90,9 +145,13 @@ body { color: var(--text-color, #111827) }
 .label{font-size:12px;color:var(--muted)}
 .value{font-weight:700;font-size:20px}
 .friends-list{display:flex;gap:12px;flex-wrap:wrap}
-.friend{background:linear-gradient(180deg,#fbfdff,#ffffff);padding:10px;border-radius:10px;min-width:140px;flex:1;box-shadow:inset 0 -1px 0 rgba(15,23,42,0.02);min-width:110px}
+.friend{background:linear-gradient(180deg,var(--card),rgba(255,255,255,0.02));padding:10px;border-radius:10px;min-width:140px;flex:1;box-shadow:inset 0 -1px 0 rgba(15,23,42,0.02);min-width:110px}
 .friend .name{font-weight:700}
 .friend .spent{color:var(--accent-2);font-weight:700}
+
+/* friend tile hover */
+.friend{ transition: transform 240ms ease, box-shadow 240ms ease }
+.friend:hover{ transform: translateY(-6px); box-shadow: 0 14px 30px rgba(0,0,0,0.5) }
 .form-card{width:360px}
 .form-row{display:flex;flex-direction:column;margin-bottom:10px}
 .form-row label{font-size:13px;margin-bottom:6px;color:var(--muted)}
@@ -100,15 +159,101 @@ body { color: var(--text-color, #111827) }
 .form-actions{display:flex;gap:8px;justify-content:flex-end}
 .ledger-card{grid-column:1/span2}
 .table-wrap{overflow:auto;max-height:360px;-webkit-overflow-scrolling:touch}
+/* Ledger filters */
+.ledger-filters{display:flex;gap:8px;align-items:center;margin:10px 0 12px}
+.ledger-filters input[type="search"]{
+  flex:1;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text-color);
+}
+.ledger-filters input[type="search"]:focus{
+  outline:none;
+  border-color:var(--accent-2);
+  background:rgba(177,59,255,0.08);
+}
+.ledger-filters select{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text-color);
+  min-width:120px;
+  cursor:pointer;
+}
+.ledger-filters select:hover{
+  border-color:var(--accent-2);
+  background:rgba(177,59,255,0.08);
+}
+.ledger-filters select option{
+  background:var(--bg);
+  color:var(--text-color);
+  padding:8px;
+}
+.ledger-filters label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.ledger-filters input[type="date"]{
+  padding:6px 8px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text-color);
+  font-size:12px;
+}
+.ledger-filters input[type="date"]:focus{
+  outline:none;
+  border-color:var(--accent-2);
+}
+.ledger-filters .btn{padding:8px 10px}
 table{width:100%;border-collapse:collapse}
 th,td{padding:12px 8px;text-align:left;border-bottom:1px solid rgba(15,23,42,0.04)}
 th{background:transparent;color:var(--muted);font-weight:600}
+.table-wrap tbody tr{ opacity:1; transform:none; }
+.ui-loaded .table-wrap tbody tr{ animation: fadeInUp 320ms ease both }
+.table-wrap tbody tr:hover{ background: rgba(177,59,255,0.04); transform: translateX(4px); }
 .footer{text-align:center;color:var(--muted);padding:18px 0}
 .items-section{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+
+/* WhatsApp integration removed */
+
+/* Reports styles */
+.reports-card{grid-column:1/span2}
+.reports-controls{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin:8px 0;
+  flex-wrap:wrap; /* allow wrapping to prevent overflow */
+}
+.reports-controls > button{min-width:96px}
+.reports-controls label{display:flex;align-items:center;gap:6px}
+.report-results{margin-top:12px;max-height:40vh;overflow:auto}
+.report-summary{padding:12px;border-radius:8px;background:var(--card);border:1px solid var(--border)}
+.report-breakdown{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.report-pill{background:rgba(255,255,255,0.02);padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);min-width:120px}
+
+/* Mobile: stack controls vertically for small screens */
+@media (max-width: 640px){
+  .reports-controls{flex-direction:column;align-items:stretch}
+  .reports-controls > button{width:100%}
+  .reports-controls label{width:100%}
+  .reports-controls input[type="date"]{width:100%}
+  .report-results{max-height:50vh}
+}
 .items-inputs{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Confirmation modal */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1200}
+.modal[aria-hidden="false"]{display:flex}
+.modal-backdrop{position:absolute;inset:0;background:rgba(2,6,23,0.6)}
+.modal-panel{position:relative;max-width:540px;width:90%;z-index:2}
+.modal-body{background:var(--card);padding:18px;border-radius:10px;border:1px solid var(--border);color:var(--text-color)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .items-inputs input{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);flex:1 1 100px;min-width:0}
 .items-list{display:flex;flex-direction:column;gap:6px;max-height:120px;overflow:auto}
-.items-list .item-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,#fff,#fbfdff)}
+.items-list .item-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,var(--card),rgba(255,255,255,0.02))}
+.items-list .item-row:hover{ transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.4) }
 .items-subtotal{font-weight:700;text-align:right;color:var(--muted)}
 #addItemBtn{flex:0 0 auto}
 .add-fund{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
@@ -128,6 +273,7 @@ th{background:transparent;color:var(--muted);font-weight:600}
   th,td{padding:10px 6px}
   table{font-size:14px}
   .items-list .item-row{font-size:14px}
+  .ledger-filters{flex-direction:column;align-items:stretch}
   .add-fund{flex-direction:column;align-items:stretch}
   .add-fund input{width:100%}
 
